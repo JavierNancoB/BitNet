@@ -336,3 +336,51 @@ Import-Module "C:\Program Files\Microsoft Visual Studio\2022\Professional\Common
 ```
 
 These steps will initialize your environment and allow you to use the correct Visual Studio tools.
+
+## Recordatorios
+
+Los comandos siguientes son recordatorios para compilar en windows 11.
+
+```bash
+C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools>d:
+
+D:\>cd Trabajo
+
+D:\Trabajo>cd BitNet
+```
+
+```bash
+D:\Trabajo\BitNet>clang -v
+clang version 19.1.5
+Target: x86_64-pc-windows-msvc
+Thread model: posix
+InstalledDir: C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin
+```
+
+```bash
+D:\Trabajo\BitNet>CALL C:\Users\javie\anaconda3\Scripts\activate.bat
+
+(base) D:\Trabajo\BitNet>conda activate bitnet-cpp
+
+```
+
+```cpp
+#undef clock
+```
+
+```python
+OS_EXTRA_ARGS = {
+    "Windows": [],
+}
+```
+
+```python
+run_command([
+    "cmake", "-B", "build",
+    "-G", "Visual Studio 17 2022",
+    "-T", "ClangCL",
+    "-A", "x64",
+    "-DBITNET_X86_TL2=ON"
+], log_step="generate_build_files")
+
+```
