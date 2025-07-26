@@ -69,7 +69,7 @@ COMPILER_EXTRA_ARGS = {
 }
 
 OS_EXTRA_ARGS = {
-    "Windows":["-T", "ClangCL"],
+    "Windows":[],
 }
 
 ARCH_ALIAS = {
@@ -212,17 +212,17 @@ def compile():
         exit(0)
     logging.info("Compiling the code using CMake.")
     run_command([
-        "cmake",
+        "cmake", "-B", "build",
         "-G", "Visual Studio 17 2022",
-        "-B", "build",
-        *COMPILER_EXTRA_ARGS[arch],
-        *OS_EXTRA_ARGS.get(platform.system(), []),
-        "-DCMAKE_C_COMPILER=clang",
-        "-DCMAKE_CXX_COMPILER=clang++"
+        "-T", "ClangCL",
+        "-A", "x64",
+        "-DBITNET_X86_TL2=ON"
     ], log_step="generate_build_files")
+
 
     # run_command(["cmake", "--build", "build", "--target", "llama-cli", "--config", "Release"])
     run_command(["cmake", "--build", "build", "--config", "Release"], log_step="compile")
+    
 
 def main():
     setup_gguf()
