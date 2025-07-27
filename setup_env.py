@@ -11,51 +11,21 @@ from pathlib import Path
 logger = logging.getLogger("setup_env")
 
 SUPPORTED_HF_MODELS = {
-    "1bitLLM/bitnet_b1_58-large": {
-        "model_name": "bitnet_b1_58-large",
-    },
-    "1bitLLM/bitnet_b1_58-3B": {
-        "model_name": "bitnet_b1_58-3B",
-    },
-    "HF1BitLLM/Llama3-8B-1.58-100B-tokens": {
-        "model_name": "Llama3-8B-1.58-100B-tokens",
-    },
-    "tiiuae/Falcon3-7B-Instruct-1.58bit": {
-        "model_name": "Falcon3-7B-Instruct-1.58bit",
-    },
-    "tiiuae/Falcon3-7B-1.58bit": {
-        "model_name": "Falcon3-7B-1.58bit",
-    },
-    "tiiuae/Falcon3-10B-Instruct-1.58bit": {
-        "model_name": "Falcon3-10B-Instruct-1.58bit",
-    },
-    "tiiuae/Falcon3-10B-1.58bit": {
-        "model_name": "Falcon3-10B-1.58bit",
-    },
-    "tiiuae/Falcon3-3B-Instruct-1.58bit": {
-        "model_name": "Falcon3-3B-Instruct-1.58bit",
-    },
-    "tiiuae/Falcon3-3B-1.58bit": {
-        "model_name": "Falcon3-3B-1.58bit",
-    },
-    "tiiuae/Falcon3-1B-Instruct-1.58bit": {
-        "model_name": "Falcon3-1B-Instruct-1.58bit",
-    },
-    "microsoft/BitNet-b1.58-2B-4T": {
-        "model_name": "BitNet-b1.58-2B-4T",
-    },
-    "tiiuae/Falcon-E-3B-Instruct": {
-        "model_name": "Falcon-E-3B-Instruct",
-    },
-    "tiiuae/Falcon-E-1B-Instruct": {
-        "model_name": "Falcon-E-1B-Instruct",
-    },
-    "tiiuae/Falcon-E-3B-Base": {
-        "model_name": "Falcon-E-3B-Base",
-    },
-    "tiiuae/Falcon-E-1B-Base": {
-        "model_name": "Falcon-E-1B-Base",
-    },
+    "1bitLLM/bitnet_b1_58-large": {"model_name": "bitnet_b1_58-large"},
+    "1bitLLM/bitnet_b1_58-3B": {"model_name": "bitnet_b1_58-3B"},
+    "HF1BitLLM/Llama3-8B-1.58-100B-tokens": {"model_name": "Llama3-8B-1.58-100B-tokens"},
+    "tiiuae/Falcon3-7B-Instruct-1.58bit": {"model_name": "Falcon3-7B-Instruct-1.58bit"},
+    "tiiuae/Falcon3-7B-1.58bit": {"model_name": "Falcon3-7B-1.58bit"},
+    "tiiuae/Falcon3-10B-Instruct-1.58bit": {"model_name": "Falcon3-10B-Instruct-1.58bit"},
+    "tiiuae/Falcon3-10B-1.58bit": {"model_name": "Falcon3-10B-1.58bit"},
+    "tiiuae/Falcon3-3B-Instruct-1.58bit": {"model_name": "Falcon3-3B-Instruct-1.58bit"},
+    "tiiuae/Falcon3-3B-1.58bit": {"model_name": "Falcon3-3B-1.58bit"},
+    "tiiuae/Falcon3-1B-Instruct-1.58bit": {"model_name": "Falcon3-1B-Instruct-1.58bit"},
+    "microsoft/BitNet-b1.58-2B-4T": {"model_name": "BitNet-b1.58-2B-4T"},
+    "tiiuae/Falcon-E-3B-Instruct": {"model_name": "Falcon-E-3B-Instruct"},
+    "tiiuae/Falcon-E-1B-Instruct": {"model_name": "Falcon-E-1B-Instruct"},
+    "tiiuae/Falcon-E-3B-Base": {"model_name": "Falcon-E-3B-Base"},
+    "tiiuae/Falcon-E-1B-Base": {"model_name": "Falcon-E-1B-Base"},
 }
 
 SUPPORTED_QUANT_TYPES = {
@@ -69,7 +39,7 @@ COMPILER_EXTRA_ARGS = {
 }
 
 OS_EXTRA_ARGS = {
-    "Windows":[],
+    "Windows": [],
 }
 
 ARCH_ALIAS = {
@@ -82,7 +52,13 @@ ARCH_ALIAS = {
 }
 
 def system_info():
-    return platform.system(), ARCH_ALIAS[platform.machine()]
+    system, arch_raw = platform.system(), platform.machine()
+    arch = ARCH_ALIAS.get(arch_raw, None)
+    logger.info(f"Detected system: {system}, architecture: {arch_raw} mapped to {arch}")
+    if arch is None:
+        logger.error(f"Unknown architecture: {arch_raw}")
+        sys.exit(1)
+    return system, arch
 
 def get_model_name():
     if args.hf_repo:
@@ -90,21 +66,24 @@ def get_model_name():
     return os.path.basename(os.path.normpath(args.model_dir))
 
 def run_command(command, shell=False, log_step=None):
-    """Run a system command and ensure it succeeds."""
+    logger.info(f"Running command: {' '.join(command)}")
     if log_step:
         log_file = os.path.join(args.log_dir, log_step + ".log")
+        logger.info(f"Logging output to {log_file}")
         with open(log_file, "w") as f:
             try:
-                subprocess.run(command, shell=shell, check=True, stdout=f, stderr=f)
+                subprocess.run(command, shell=shell, check=True, stdout=f, stderr=subprocess.STDOUT)
+                logger.info(f"Command {log_step} completed successfully")
             except subprocess.CalledProcessError as e:
-                logging.error(f"Error occurred while running command: {e}, check details in {log_file}")
+                logger.error(f"Error occurred while running command: {e}, check log file {log_file}")
                 sys.exit(1)
     else:
         try:
             subprocess.run(command, shell=shell, check=True)
+            logger.info(f"Command completed successfully: {' '.join(command)}")
         except subprocess.CalledProcessError as e:
-            logging.error(f"Error occurred while running command: {e}")
-        sys.exit(1)
+            logger.error(f"Error occurred while running command: {e}")
+            sys.exit(1)
 
 def prepare_model():
     _, arch = system_info()
@@ -113,7 +92,6 @@ def prepare_model():
     quant_type = args.quant_type
     quant_embd = args.quant_embd
     if hf_url is not None:
-        # download the model
         model_dir = os.path.join(model_dir, SUPPORTED_HF_MODELS[hf_url]["model_name"])
         Path(model_dir).mkdir(parents=True, exist_ok=True)
         logging.info(f"Downloading model {hf_url} from HuggingFace to {model_dir}...")
@@ -126,14 +104,14 @@ def prepare_model():
     gguf_path = os.path.join(model_dir, "ggml-model-" + quant_type + ".gguf")
     if not os.path.exists(gguf_path) or os.path.getsize(gguf_path) == 0:
         logging.info(f"Converting HF model to GGUF format...")
+        logging.info(f"Preparing to convert model with quant_type: {quant_type}")
+
         if quant_type.startswith("tl"):
             run_command([sys.executable, "utils/convert-hf-to-gguf-bitnet.py", model_dir, "--outtype", quant_type, "--quant-embd"], log_step="convert_to_tl")
-        else: # i2s
-            # convert to f32
+        else:
             run_command([sys.executable, "utils/convert-hf-to-gguf-bitnet.py", model_dir, "--outtype", "f32"], log_step="convert_to_f32_gguf")
             f32_model = os.path.join(model_dir, "ggml-model-f32.gguf")
             i2s_model = os.path.join(model_dir, "ggml-model-i2_s.gguf")
-            # quantize to i2s
             if platform.system() != "Windows":
                 if quant_embd:
                     run_command(["./build/bin/llama-quantize", "--token-embedding-type", "f16", f32_model, i2s_model, "I2_S", "1", "1"], log_step="quantize_to_i2s")
@@ -144,18 +122,17 @@ def prepare_model():
                     run_command(["./build/bin/Release/llama-quantize", "--token-embedding-type", "f16", f32_model, i2s_model, "I2_S", "1", "1"], log_step="quantize_to_i2s")
                 else:
                     run_command(["./build/bin/Release/llama-quantize", f32_model, i2s_model, "I2_S", "1"], log_step="quantize_to_i2s")
-
         logging.info(f"GGUF model saved at {gguf_path}")
     else:
         logging.info(f"GGUF model already exists at {gguf_path}")
 
 def setup_gguf():
-    # Install the pip package
+    logging.info("Installing gguf-py pip package...")
     run_command([sys.executable, "-m", "pip", "install", "3rdparty/llama.cpp/gguf-py"], log_step="install_gguf")
 
 def gen_code():
     _, arch = system_info()
-    
+
     llama3_f3_models = set([model['model_name'] for model in SUPPORTED_HF_MODELS.values() if model['model_name'].startswith("Falcon") or model['model_name'].startswith("Llama")])
 
     if arch == "arm64":
@@ -182,7 +159,6 @@ def gen_code():
             raise NotImplementedError()
     else:
         if args.use_pretuned:
-            # cp preset_kernels/model_name/bitnet-lut-kernels_tl1.h to include/bitnet-lut-kernels.h
             pretuned_kernels = os.path.join("preset_kernels", get_model_name())
             if not os.path.exists(pretuned_kernels):
                 logging.error(f"Pretuned kernels not found for model {args.hf_repo}")
@@ -199,37 +175,40 @@ def gen_code():
         else:
             raise NotImplementedError()
 
-
 def compile():
     # Check if cmake is installed
     cmake_exists = subprocess.run(["cmake", "--version"], capture_output=True)
     if cmake_exists.returncode != 0:
-        logging.error("Cmake is not available. Please install CMake and try again.")
+        logging.error("CMake is not available. Please install CMake and try again.")
         sys.exit(1)
     _, arch = system_info()
     if arch not in COMPILER_EXTRA_ARGS.keys():
-        logging.error(f"Arch {arch} is not supported yet")
-        exit(0)
-    logging.info("Compiling the code using CMake.")
-    run_command([
+        logging.error(f"Architecture {arch} is not supported yet")
+        sys.exit(1)
+
+    logging.info("Starting compilation using CMake...")
+    cmake_generate_cmd = [
         "cmake", "-B", "build",
         "-G", "Visual Studio 17 2022",
         "-T", "ClangCL",
         "-A", "x64",
         "-DBITNET_X86_TL2=ON"
-    ], log_step="generate_build_files")
+    ]
+    logging.info(f"Generating build files with command: {' '.join(cmake_generate_cmd)}")
+    run_command(cmake_generate_cmd, log_step="generate_build_files")
 
-
-    # run_command(["cmake", "--build", "build", "--target", "llama-cli", "--config", "Release"])
-    run_command(["cmake", "--build", "build", "--config", "Release"], log_step="compile")
-    
+    build_cmd = ["cmake", "--build", "build", "--config", "Release"]
+    logging.info(f"Building the project with command: {' '.join(build_cmd)}")
+    run_command(build_cmd, log_step="compile")
 
 def main():
+    logging.info("Starting setup_env script")
     setup_gguf()
     gen_code()
     compile()
     prepare_model()
-    
+    logging.info("Setup_env script finished successfully")
+
 def parse_args():
     _, arch = system_info()
     parser = argparse.ArgumentParser(description='Setup the environment for running the inference')
@@ -249,5 +228,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     args = parse_args()
     Path(args.log_dir).mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s')
     main()

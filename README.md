@@ -384,3 +384,11 @@ run_command([
 ], log_step="generate_build_files")
 
 ```
+
+recordatorio de especificar el modelo osino se usa por defecto el cli (me demore 30 horas en saber esto y estaba en la documentacion).
+
+```bash
+python setup_env.py -hr 1bitLLM/bitnet_b1_58-large -md models/bitnet -q i2_s
+```
+
+FINAL.
